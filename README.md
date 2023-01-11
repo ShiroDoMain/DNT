@@ -1,2 +1,0 @@
-# DNT
-Transformer-based translator
