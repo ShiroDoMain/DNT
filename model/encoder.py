@@ -2,27 +2,14 @@ import torch
 from model.feed_forward import PositionwiseFeedForward
 from model.embedding import Embedding
 from model.attentions import MultiHeadAttention
-from torch.nn import Parameter
+from model.norm import Norm
 import torch.nn as nn
 
 
-class Norm(nn.Module):
-    def __init__(self, dim_model, eps=1e-12):
-        super().__init__()
-        self.gamma = Parameter(torch.ones(dim_model))
-        self.beta = Parameter(torch.zeros(dim_model))
-        self.eps = eps
-
-    def forward(self,x):
-        mean = x.mean(-1, keepdim=True)
-        std = x.std(-1, keepdim=True)
-        return self.gamma * (x - mean) / (std + self.eps) + self.beta
-
-
 class Encoder(nn.Module):
-    def __init__(self, vocab_size, max_seq_len, dim_model, n_layers, n_head, feed_hidden, drop, device):
+    def __init__(self, encoder_vocab_size, max_seq_len, dim_model, n_layers, n_head, feed_hidden, drop, device):
         super().__init__()
-        self.embedding = Embedding(voc_size=vocab_size,
+        self.embedding = Embedding(voc_size=encoder_vocab_size,
                                    max_seq_len=max_seq_len,
                                    dim_model=dim_model,
                                    drop=drop,

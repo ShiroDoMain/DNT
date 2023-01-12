@@ -7,10 +7,10 @@ from torch.nn.modules import ModuleList
 class Attention(nn.Module):
     def forward(self, q, k, v, mask=None, drop_fn=None, e=-1e-9):
         score = q @ k.transpose(-2, -1) / math.sqrt(q.size(-1))
-        if mask:
+        if mask is not None:
             score = score.masked_fill(mask == 0, e)
         attn = F.softmax(score, dim=-1)
-        if drop_fn:
+        if drop_fn is not None:
             attn = drop_fn(attn)
         return attn @ v, attn
 
@@ -18,7 +18,7 @@ class Attention(nn.Module):
 class MultiHeadAttention(nn.Module):
     def __init__(self, head, dim_model, drop):
         super().__init__()
-        assert dim_model % head, "head mod dim must eq 0"
+        assert dim_model % head == 0, "head mod dim must eq 0"
         self.d_k = dim_model // head
         self.head = head
 
