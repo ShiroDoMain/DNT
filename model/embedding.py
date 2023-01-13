@@ -19,19 +19,19 @@ class PositionEmbedding(nn.Module):
 
 
 class TokenEmbedding(nn.Embedding):
-    def __init__(self, voc_size, dim_model):
-        super().__init__(voc_size, dim_model, padding_idx=1)
+    def __init__(self, voc_size, dim_model, pad_idx):
+        super().__init__(voc_size, dim_model, padding_idx=pad_idx)
 
 
 class SegmentEmbedding(nn.Embedding):
-    def __init__(self, dim_model):
-        super().__init__(3, dim_model, padding_idx=1)
+    def __init__(self, dim_model, pad_idx):
+        super().__init__(3, dim_model, padding_idx=pad_idx)
 
 
 class Embedding(nn.Module):
-    def __init__(self, voc_size, dim_model, max_seq_len, drop, device) -> None:
+    def __init__(self, voc_size, dim_model, max_seq_len, pad_idx, drop, device) -> None:
         super().__init__()
-        self.token_embedding = TokenEmbedding(voc_size=voc_size, dim_model=dim_model)
+        self.token_embedding = TokenEmbedding(voc_size=voc_size, dim_model=dim_model, pad_idx=pad_idx)
         self.position_embedding = PositionEmbedding(dim_model=dim_model, max_seq_len=max_seq_len, device=device)
         self.drop = nn.Dropout(drop)
 

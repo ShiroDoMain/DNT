@@ -7,11 +7,12 @@ from model.feed_forward import PositionwiseFeedForward
 
 
 class Decoder(nn.Module):
-    def __init__(self, decode_vocab_size, max_seq_len, dim_model, feed_hidden, n_layers, n_head, drop, device):
+    def __init__(self, decode_vocab_size, max_seq_len, dim_model, feed_hidden, pad_idx, n_layers, n_head, drop, device):
         super().__init__()
         self.embedding = Embedding(voc_size=decode_vocab_size,
                                    dim_model=dim_model,
                                    max_seq_len=max_seq_len,
+                                   pad_idx=pad_idx,
                                    drop=drop,
                                    device=device)
         self.layers = n_layers

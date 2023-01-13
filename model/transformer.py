@@ -8,37 +8,35 @@ class Transformer(nn.Module):
     def __init__(self,
                  dim_model,
                  max_seq_len,
-                 source_pad_idx,
-                 target_pad_idx,
-                 target_sos_idx,
-                 encode_vocab_size,
-                 decode_vocab_size,
+                 encoder_vocab_size,
+                 decoder_vocab_size,
                  n_head,
                  n_layers,
                  feed_hidden,
+                 pad_idx,
                  drop,
                  device):
         super().__init__()
-        self.spi = source_pad_idx
-        self.tpi = target_pad_idx
-        self.tsi = target_sos_idx
+        self.pad_idx = pad_idx
         self.encoder = Encoder(
-            encoder_vocab_size=encode_vocab_size,
+            encoder_vocab_size=encoder_vocab_size,
             max_seq_len=max_seq_len,
             dim_model=dim_model,
             n_layers=n_layers,
             n_head=n_head,
             feed_hidden=feed_hidden,
+            pad_idx=pad_idx,
             drop=drop,
             device=device
         )
         self.decoder = Decoder(
-            decode_vocab_size=decode_vocab_size,
+            decode_vocab_size=decoder_vocab_size,
             max_seq_len=max_seq_len,
             dim_model=dim_model,
             feed_hidden=feed_hidden,
             n_layers=n_layers,
             n_head=n_head,
+            pad_idx=pad_idx,
             drop=drop,
             device=device
         )
@@ -55,13 +53,11 @@ class Transformer(nn.Module):
     def pad_mask(self, q, k):
         q_len, k_len = q.size(1), k.size(1)
 
-        k = k.ne(self.spi).unsuqeeze(1).unsqeeze(2).repeat(1 , 1, q_len, 1)
-        q = q.ne(self.spi).unsuqeeze(1).unsqeeze(3).repeat(1 , 1, 1, k_len)
+        k = k.ne(self.pad_idx).unsuqeeze(1).unsqeeze(2).repeat(1, 1, q_len, 1)
+        q = q.ne(self.pad_idx).unsuqeeze(1).unsqeeze(3).repeat(1, 1, 1, k_len)
 
         return k & q
 
     def no_peat_mask(self, q, k):
         q_len, k_len = q.size(1), k.size(1)
         return torch.tril(torch.ones(q_len, k_len)).type(torch.BoolTensor).to(self.device)
-
-

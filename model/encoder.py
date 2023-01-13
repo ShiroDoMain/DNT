@@ -7,13 +7,23 @@ import torch.nn as nn
 
 
 class Encoder(nn.Module):
-    def __init__(self, encoder_vocab_size, max_seq_len, dim_model, n_layers, n_head, feed_hidden, drop, device):
+    def __init__(self,
+                 encoder_vocab_size,
+                 max_seq_len,
+                 dim_model,
+                 n_layers,
+                 n_head,
+                 feed_hidden,
+                 pad_idx,
+                 drop,
+                 device):
         super().__init__()
         self.embedding = Embedding(voc_size=encoder_vocab_size,
                                    max_seq_len=max_seq_len,
                                    dim_model=dim_model,
                                    drop=drop,
-                                   device=device)
+                                   device=device,
+                                   pad_idx=pad_idx)
         self.attention = MultiHeadAttention(head=n_head,
                                             dim_model=dim_model,
                                             drop=drop)
