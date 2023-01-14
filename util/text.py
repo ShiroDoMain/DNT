@@ -5,8 +5,12 @@ import re
 
 
 symbol_half = r"""!"#$%&()*+,./:;<=>?@[\]^_`{|}~"""
-symbol_full = r"""！@#￥%……&*（）——+{}：“”‘’；【】《》，。？/·~"""
+symbol_full = r"""！@#￥%……&*（）——+{}：“”„‘’；【】《》，。？/·~"""
 symbols = symbol_full + symbol_half
+
+
+def segment_en(line: str):
+    return line.replace("'er", " are").replace("'s", " is").replace("'m", " am").replace("'t", "dont ")
 
 
 def chinese_text(line_list, min_freq):

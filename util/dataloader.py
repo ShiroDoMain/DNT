@@ -1,7 +1,6 @@
 import os
-
 import torch
-
+from tqdm import tqdm
 from util.text import symbols
 
 
@@ -26,33 +25,42 @@ class Iter:
                  vocab,
                  batch_size,
                  device):
-        self._data = data
         self.vocab = vocab
         self.batch_size = batch_size
         self.batches = None
         self.device = device
+        self._data = self.normalize(data)
 
     def normalize(self, arr):
-        try:
-            return torch.tensor([[self.vocab.s2i[word] for word in batch] for batch in arr], dtype=torch.long)
-        except:
-            raise
-
-    def build_batches(self):
-        minibatch = []
-        for offset, _data in enumerate(self._data):
-            if minibatch and offset % self.batch_size == 0:
-                yield minibatch
-                minibatch = []
-            minibatch.append(_data)
-
-        if minibatch:
-            yield minibatch
+        arr = [[self.vocab.s2i[word] for word in batch] for batch in tqdm(arr, desc="dataset normalize")]
+        return torch.tensor(arr, dtype=torch.long).to(self.device)
 
     def __iter__(self):
-        batches = self.build_batches()
-        for minibatch in batches:
-            yield self.normalize(minibatch).to(self.device)
+        idx = 0
+        while 1:
+            if idx * self.batch_size >= len(self._data):
+                break
+            minibatch = self._data[idx*self.batch_size:self.batch_size*(idx+1)]
+            yield minibatch
+            idx += 1
+        # minibatch = []
+        # for offset, _data in enumerate(self._data):
+        #     yield
+        #     if minibatch and offset % self.batch_size == 0:
+        #         yield minibatch
+        #         minibatch = []
+        #     minibatch.append(_data)
+        #
+        # if minibatch:
+        #     yield minibatch
+
+    # def __iter__(self):
+    #     batches = self.build_batches()
+    #     for minibatch in batches:
+    #         yield minibatch
+
+    def __len__(self):
+        return len(self._data) // self.batch_size
 
 
 class Batch:
@@ -75,7 +83,15 @@ class Data:
 
     def __iter__(self):
         for source, target in iter(zip(self.source, self.target)):
-            yield Batch(source, target)
+            yield Batch(
+                source,
+                target
+            )
+        # for source, target in iter(zip(self.source, self.target)):
+        #     yield Batch(source, target)
+
+    def __len__(self):
+        return len(self.source)
 
 
 def _symbol_replace(text: str) -> str:
@@ -93,19 +109,18 @@ def _load_data(path):
 
 class DataLoader:
     def __init__(self,
-                 *lang,
+                 source_lang,
+                 target_lang,
                  data_path,
                  batch_size,
-                 padding=False,
                  device,
+                 padding=False,
                  sos="[SOS]",
                  pad="[PAD]",
                  eos="[EOS]"):
         """
         DataLoader("en","de","data/", 20)
         """
-        assert len(lang) == 2, "language accept 2 parameters"
-        source_lang, target_lang = lang
         self.batch_size = batch_size
         self.device = device
 
@@ -161,7 +176,11 @@ class DataLoader:
 
 
 if __name__ == '__main__':
-    data_ = DataLoader("en", "de", data_path="..\\data", batch_size=20, padding=True, device="cpu")
+    data_ = DataLoader("en", "de", data_path="..\\data", batch_size=20, padding=True, device="cuda")
     train, test, val = data_.make_data()
-    for batch in train:
-        print(batch.source.unsqeeze())
+    from tqdm import tqdm
+    for batch in tqdm(train, total=len(train)):
+        print(batch.source)
+        # print(batch.source)
+        # raise
+        # print(batch.source.unsqeeze())

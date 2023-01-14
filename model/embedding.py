@@ -39,5 +39,4 @@ class Embedding(nn.Module):
     def forward(self, x):
         token = self.token_embedding(x)
         position = self.position_embedding(x)
-        print(position)
         return self.drop(token + position)
