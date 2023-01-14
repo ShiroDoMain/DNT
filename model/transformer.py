@@ -18,6 +18,7 @@ class Transformer(nn.Module):
                  device):
         super().__init__()
         self.pad_idx = pad_idx
+        self.device = device
         self.encoder = Encoder(
             encoder_vocab_size=encoder_vocab_size,
             max_seq_len=max_seq_len,
@@ -53,8 +54,8 @@ class Transformer(nn.Module):
     def pad_mask(self, q, k):
         q_len, k_len = q.size(1), k.size(1)
 
-        k = k.ne(self.pad_idx).unsuqeeze(1).unsqeeze(2).repeat(1, 1, q_len, 1)
-        q = q.ne(self.pad_idx).unsuqeeze(1).unsqeeze(3).repeat(1, 1, 1, k_len)
+        k = k.ne(self.pad_idx).unsqueeze(1).unsqueeze(2).repeat(1, 1, q_len, 1)
+        q = q.ne(self.pad_idx).unsqueeze(1).unsqueeze(3).repeat(1, 1, 1, k_len)
 
         return k & q
 

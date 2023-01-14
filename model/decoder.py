@@ -1,5 +1,5 @@
 import torch
-import  torch.nn as nn
+import torch.nn as nn
 from model.embedding import Embedding
 from model.attentions import MultiHeadAttention
 from model.norm import Norm
@@ -31,17 +31,17 @@ class Decoder(nn.Module):
 
         self.linear = nn.Linear(dim_model, decode_vocab_size)
 
-    def forward(self, target, encode_source, mask, source_mask):
+    def forward(self, target, encode_source, target_mask, source_mask):
         target = self.embedding(target)
 
         for _ in range(self.layers):
             target_ = target
-            target = self.self_attention(target, target, target, mask=mask)
+            target = self.self_attention(target, target, target, mask=target_mask)
             target = self.norm_1(self.drop_1(target) + target_)
 
             if encode_source is not None:
                 target_ = target
-                target = self.encoder_decoder_attention(target, target, target, source_mask)
+                target = self.encoder_decoder_attention(target, encode_source, encode_source, source_mask)
 
                 target = self.norm_2(self.drop_2(target) + target_)
 
@@ -50,11 +50,3 @@ class Decoder(nn.Module):
             target = self.norm_3(self.drop_3(target) + target_)
 
         return self.linear(target)
-
-
-
-
-
-
-
-

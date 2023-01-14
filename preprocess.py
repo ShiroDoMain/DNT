@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from util.text import vocab_func, symbol
+from util.text import vocab_func, symbols
 
 args = ArgumentParser()
 args.add_argument("-d", "--dataset", type=str, help="dataset path")
@@ -17,24 +17,28 @@ def create_vocab(file_path, save_path, lang, min_freq):
     assert lang in vocab_func, f"unsupported language {lang}"
     lines = [line.strip() for line in open(file_path, encoding="utf-8").readlines()]
     count = vocab_func[lang](lines, min_freq)
-    with open(save_path or file_path+".vocab", "w", encoding="utf-8") as f:
+    with open(save_path or "/".join(file_path.split("/")[:-1]) + f"/vocab.{lang}", "w", encoding="utf-8") as f:
         f.write("[SOS]\n[PAD]\n[EOS]\n")
-        f.write("\n".join(symbol)+"\n")
+        f.write("\n".join(symbols) + "\n")
         for voc in count:
             f.write(f"{voc}\n")
 
 
+def segment(line: str):
+    return line.replace("'er", " are").replace("'s", " is").replace("'m", " am").replace("'t", "dont ")
+
+
 def dataset_split(file_path, train_path, test_path, val_path, lang, test_len, val_len):
-    lines = [line for line in  open(file_path, encoding="utf-8").readlines()]
-    with open(train_path or "/".join(file_path.split("/")[:-1])+f"/train_{lang}.txt", "w", encoding="utf-8") as f:
-        for line in lines[:-test_len+val_len]:
-            f.write(line)
-    with open(train_path or "/".join(file_path.split("/")[:-1])+f"/test_{lang}.txt", "w", encoding="utf-8") as f:
-        for line in lines[-(test_len+val_len):-val_len]:
-            f.write(line)
-    with open(train_path or "/".join(file_path.split("/")[:-1])+f"/val_{lang}.txt", "w", encoding="utf-8") as f:
-        for line in lines[:test_len+val_len]:
-            f.write(line)
+    lines = [line for line in open(file_path, encoding="utf-8").readlines()]
+    with open(train_path or "/".join(file_path.split("/")[:-1]) + f"/train.{lang}", "w", encoding="utf-8") as f:
+        for line in lines[:-(test_len + val_len)]:
+            f.write(line.lower())
+    with open(test_path or "/".join(file_path.split("/")[:-1]) + f"/test.{lang}", "w", encoding="utf-8") as f:
+        for line in lines[-(test_len + val_len):-val_len]:
+            f.write(line.lower())
+    with open(val_path or "/".join(file_path.split("/")[:-1]) + f"/val.{lang}", "w", encoding="utf-8") as f:
+        for line in lines[:test_len + val_len]:
+            f.write(line.lower())
 
 
 if __name__ == '__main__':

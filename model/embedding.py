@@ -7,8 +7,9 @@ class PositionEmbedding(nn.Module):
         super().__init__()
         self.encoding = torch.zeros(max_seq_len, dim_model, device=device)
         self.encoding.requires_grad = False
+
         position = torch.arange(0, max_seq_len, device=device).float().unsqueeze(dim=1)
-        s2i = torch.arange(0, dim_model, step=2, device=device)
+        s2i = torch.arange(0, dim_model, step=2, device=device) / dim_model
 
         self.encoding[:, 0::2] = torch.sin(position / (10_000 ** s2i))
         self.encoding[:, 1::2] = torch.cos(position / (10_000 ** s2i))
@@ -36,7 +37,7 @@ class Embedding(nn.Module):
         self.drop = nn.Dropout(drop)
 
     def forward(self, x):
-        x = x.to(torch.int64)
         token = self.token_embedding(x)
         position = self.position_embedding(x)
+        print(position)
         return self.drop(token + position)

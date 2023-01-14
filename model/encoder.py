@@ -41,7 +41,7 @@ class Encoder(nn.Module):
         for _ in range(self.n_layers):
             # calculate attention
             x_ = x
-            x = self.attention(x ,x ,x, mask)
+            x = self.attention(x, x, x, mask)
             self.norm_1(self.drop_1(x) + x_)
 
             # position feed forward
@@ -50,8 +50,3 @@ class Encoder(nn.Module):
             x = self.norm_2(self.drop_2(x) + x_)
 
         return x
-
-
-
-
-
