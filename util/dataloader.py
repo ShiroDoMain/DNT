@@ -5,10 +5,18 @@ from util.text import symbols
 import pickle
 
 
+class DefaultDict(dict):
+    def __getitem__(self, __o):
+        if isinstance(__o, str):
+            __o = __o if __o in self else "[UNK]"
+        return super().__getitem__(__o)
+
+
 class Vocab:
     def __init__(self,
                  file):
         self.vocab = {idx: word.strip() for idx, word in enumerate(open(file, encoding="utf-8").readlines())}
+        self.vocab_reverse = DefaultDict({word: idx for idx, word in self.vocab.items()})
         self.length = len(self.vocab)
 
     @property
@@ -17,7 +25,7 @@ class Vocab:
 
     @property
     def s2i(self):
-        return {word: idx for idx, word in self.vocab.items()}
+        return self.vocab_reverse
 
 
 class Iter:
@@ -42,7 +50,11 @@ class Iter:
         if self.save_normal and os.path.exists(self.file):
             arr = pickle.load(open(self.file, "rb"))
         else:
-            arr = [[self.vocab.s2i[word] for word in batch] for batch in tqdm(arr, desc="dataset normalize")]
+            try:
+                arr = [[self.vocab.s2i[word] for word in batch] for batch in tqdm(arr, desc="dataset normalize")]
+            except:
+                print(arr)
+                raise
             if self.save_normal:
                 pickle.dump(arr, open(self.file, "wb"))
         return torch.tensor(arr, dtype=torch.long).to(self.device)

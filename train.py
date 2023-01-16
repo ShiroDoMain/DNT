@@ -1,4 +1,5 @@
 import os.path
+import pickle
 
 from model.transformer import Transformer
 from util.config import Config
@@ -66,7 +67,7 @@ def evaluate(model, val_data, criterion):
     batch_bleu = []
 
     with torch.no_grad():
-        progress = tqdm(val_data, total=len(val_data),desc="evaluate: ")
+        progress = tqdm(val_data, total=len(val_data), desc="evaluate: ")
         for step, batch in enumerate(progress):
             source = batch.source
             target = batch.target
@@ -115,7 +116,7 @@ def main():
 
     if conf.load_model is not None:
         print("load model from", conf.load_model)
-        model.load_state_dict(torch.load(os.path.join(conf.save_path,conf.load_model)))
+        model.load_state_dict(torch.load(os.path.join(conf.save_path, conf.load_model)))
     else:
         init_model(model)
 
@@ -132,6 +133,7 @@ def main():
     criterion = nn.CrossEntropyLoss(ignore_index=conf.pad_idx)
 
     best = float("inf")
+    model_name = f"DNT_{conf.source_lang}2{conf.target_lang}"
     for epoch in range(conf.resume_epoch, conf.epochs):
         train_loss = train(model, train_data, optimizer, criterion)
 
@@ -142,13 +144,20 @@ def main():
         if val_loss < best:
             print("save model by best loss:", val_loss)
             best = val_loss
-            torch.save(model.state_dict(), os.path.join(conf.save_path, "best.pt"))
+            torch.save(model.state_dict(), os.path.join(conf.save_path, model_name + "_best.pt"))
         print(f"Epoch:{epoch} | train loss: {train_loss:.5f} | evaluation loss: {val_loss:.5f} | bleu: {bleu:.5f}")
 
         if epoch % conf.save_interval == 0 and epoch:
-            torch.save(model.state_dict(), os.path.join(conf.save_path, f"checkpoint_{epoch}.pt"))
-    torch.save(model.state_dict(), os.path.join(conf.save_path, f"checkpoint_latest.pt"))
+            torch.save(model.state_dict(), os.path.join(conf.save_path, model_name + f"_{epoch}.pt"))
+        train_loss_record.append(train_loss)
+        evaluation_loss_record.append(val_loss)
+    torch.save(model.state_dict(), os.path.join(conf.save_path, model_name + f"_latest.pt"))
 
 
 if __name__ == '__main__':
-    main()
+    train_loss_record, evaluation_loss_record = [], []
+    try:
+        main()
+    except:
+        pickle.dump(train_loss_record, open("train_loss.pkl", "wb"))
+        pickle.dump(evaluation_loss_record, open("val_loss.pkl", "wb"))

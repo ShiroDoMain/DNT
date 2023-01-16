@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from util.text import vocab_func, symbols, segment_en
+from util.text import text_func, symbols, segment_en, make_vocab
 import re
 
 
@@ -12,35 +12,47 @@ args.add_argument("--train_path", type=str, default=None, help="train data save 
 args.add_argument("--test_path", type=str, default=None, help="test data save path")
 args.add_argument("--val_path", type=str, default=None, help="val data save path")
 args.add_argument("--test_len", type=int, default=1_000, help="test data length")
-args.add_argument("--val_len", type=int, default=1_000, help="val data length")
+args.add_argument("--val_len", type=int, default=2_000, help="val data length")
 
 
 def create_vocab(file_path, save_path, lang, min_freq):
-    assert lang in vocab_func, f"unsupported language {lang}"
+    assert lang in text_func, f"unsupported language {lang}"
     lines = [line.strip() for line in open(file_path, encoding="utf-8").readlines()]
-    count = vocab_func[lang](lines, min_freq)
+    count = make_vocab(lines, min_freq, lang)
     with open(save_path or "/".join(file_path.split("/")[:-1]) + f"/vocab.{lang}", "w", encoding="utf-8") as f:
-        f.write("[SOS]\n[PAD]\n[EOS]\n")
+        f.write("[SOS]\n[PAD]\n[EOS]\n[UNK]\n")
         f.write("\n".join(symbols) + "\n")
         for voc in count:
             f.write(f"{voc}\n")
 
 
 def text_filter(text):
+    text = text_func[args.lang](text)
+    return text if text.endswith("\n") else text+"\n"
     return re.sub(f"[{symbols}]","",text)
 
 
 def dataset_split(file_path, train_path, test_path, val_path, lang, test_len, val_len):
     lines = [line for line in open(file_path, encoding="utf-8").readlines()]
-    with open(train_path or "/".join(file_path.split("/")[:-1]) + f"/train.{lang}", "w", encoding="utf-8") as f:
-        for line in lines[:-(test_len + val_len)]:
-            f.write(text_filter(line.lower()))
-    with open(test_path or "/".join(file_path.split("/")[:-1]) + f"/test.{lang}", "w", encoding="utf-8") as f:
-        for line in lines[-(test_len + val_len):-val_len]:
-            f.write(text_filter(line.lower()))
-    with open(val_path or "/".join(file_path.split("/")[:-1]) + f"/val.{lang}", "w", encoding="utf-8") as f:
-        for line in lines[:test_len + val_len]:
-            f.write(text_filter(line.lower()))
+    with open(train_path or "/".join(file_path.split("/")[:-1]) + f"/train.{lang}", "w", encoding="utf-8") as train, \
+            open(test_path or "/".join(file_path.split("/")[:-1]) + f"/test.{lang}", "w", encoding="utf-8") as test, \
+            open(val_path or "/".join(file_path.split("/")[:-1]) + f"/val.{lang}", "w", encoding="utf-8") as val:
+        data_length = len(lines)
+        for offset, line in enumerate(lines):
+            if data_length - offset > test_len + val_len:
+                train.write(text_filter(line.lower()))
+            elif data_length - offset > test_len:
+                val.write(text_filter(line.lower()))
+            else:
+                test.write(text_filter(line.lower()))
+    #     for line in lines[:-(test_len + val_len)]:
+    #         f.write(text_filter(line.lower()))
+    # with open(test_path or "/".join(file_path.split("/")[:-1]) + f"/test.{lang}", "w", encoding="utf-8") as f:
+    #     for line in lines[-(test_len + val_len):-test_len]:
+    #         f.write(text_filter(line.lower()))
+    # with open(val_path or "/".join(file_path.split("/")[:-1]) + f"/val.{lang}", "w", encoding="utf-8") as f:
+    #     for line in lines[:test_len + val_len]:
+    #         f.write(text_filter(line.lower()))
 
 
 if __name__ == '__main__':
