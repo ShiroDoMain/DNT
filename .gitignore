@@ -132,3 +132,4 @@ dmypy.json
 data/*
 *.pt
 *.pkl
+conf/*

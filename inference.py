@@ -33,7 +33,7 @@ model = Transformer(
 
 model.load_state_dict(torch.load("save/DNT_zh2ja_500.pt"))
 model.eval()
-out = model(text_padded, text_padded)
+out = model(text_tokenized, text_tokenized)
 print(out)
 
 # data = Iter(text, Vocab(open("data/vocab.zh")), 1, False, None, None, "cpu")
