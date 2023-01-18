@@ -5,6 +5,34 @@ from util.text import symbols
 import pickle
 
 
+def _symbol_replace(text: str) -> str:
+    for symbol in symbols:
+        text = text.replace(symbol, f" {symbol} ")
+    return text
+
+
+def _load_data(path):
+    with open(path, encoding="utf-8") as f:
+        data = [_symbol_replace(line.strip()).split() for line in f.readlines()]
+    max_len = max([len(line) for line in data])
+    return data, max_len
+
+
+def pad(text_list, max_len=None, sos_token="[SOS]", pad_token="[PAD]", eos_token="[EOS]"):
+    max_len = max_len if max_len is not None else len(text_list)
+    return [sos_token] + text_list + [eos_token] + \
+        (([pad_token] * (max_len - len(text_list))) if len(text_list) < max_len else [])
+
+
+def normalize(vocab: "Vocab", arr):
+    return [vocab.s2i[word] for word in arr]
+
+
+def vec2text(vec, vocab, pad_token="[PAD]", eos_token="[EOS]", sos_token="[SOS]"):
+    return "".join(vocab.i2s[i] for i in vec.tolist()
+                   if vocab.i2s[i] not in [pad_token, eos_token, sos_token])
+
+
 class DefaultDict(dict):
     def __getitem__(self, __o):
         if isinstance(__o, str):
@@ -44,14 +72,14 @@ class Iter:
         self.save_normal = save_normal
         self.data_path = data_path
         self.file = os.path.join(self.data_path, file + ".pkl")
-        self._data = self.normalize(data)
+        self._data = self._normalize(data)
 
-    def normalize(self, arr):
+    def _normalize(self, arr):
         if self.save_normal and os.path.exists(self.file):
             arr = pickle.load(open(self.file, "rb"))
         else:
             try:
-                arr = [[self.vocab.s2i[word] for word in batch] for batch in tqdm(arr, desc="dataset normalize")]
+                arr = [normalize(self.vocab, minibatch) for minibatch in tqdm(arr, desc="normalizing")]
             except:
                 print(arr)
                 raise
@@ -124,19 +152,6 @@ class Data:
         return len(self.source)
 
 
-def _symbol_replace(text: str) -> str:
-    for symbol in symbols:
-        text = text.replace(symbol, f" {symbol} ")
-    return text
-
-
-def _load_data(path):
-    with open(path, encoding="utf-8") as f:
-        data = [_symbol_replace(line.strip()).split() for line in f.readlines()]
-    max_len = max([len(line) for line in data])
-    return data, max_len
-
-
 class DataLoader:
     def __init__(self,
                  source_lang,
@@ -178,9 +193,7 @@ class DataLoader:
         self.target_vocab = None
 
     def _pad(self, data, max_len):
-        return [[self.sos] + line_list + [self.eos] +
-                (([self.pad] * (max_len - len(line_list))) if len(line_list) < max_len else [])
-                for line_list in data]
+        return [pad(text, max_len) for text in data]
 
     def load_vocab(self):
         source_vocab = Vocab(self.source_vocab_path)

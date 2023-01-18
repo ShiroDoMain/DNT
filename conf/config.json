@@ -11,7 +11,7 @@
   "padding": true,
   "save_normal": true,
   "device": "cuda",
-  "batch_size": 222,
+  "batch_size": 128,
   "init_lr": 1e-5,
   "weight_decay": 5e-4,
   "dim_model": 256,

@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from util.text import text_func, symbols, segment_en, make_vocab
 import re
+from tqdm import tqdm
 
 
 args = ArgumentParser()
@@ -38,7 +39,8 @@ def dataset_split(file_path, train_path, test_path, val_path, lang, test_len, va
             open(test_path or "/".join(file_path.split("/")[:-1]) + f"/test.{lang}", "w", encoding="utf-8") as test, \
             open(val_path or "/".join(file_path.split("/")[:-1]) + f"/val.{lang}", "w", encoding="utf-8") as val:
         data_length = len(lines)
-        for offset, line in enumerate(lines):
+        progress = tqdm(enumerate(lines), desc=f"process {lang}")
+        for offset, line in progress:
             if data_length - offset > test_len + val_len:
                 train.write(text_filter(line.lower()))
             elif data_length - offset > test_len:

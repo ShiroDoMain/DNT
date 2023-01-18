@@ -3,11 +3,13 @@ import pickle
 
 from model.transformer import Transformer
 from util.config import Config
-from util.dataloader import DataLoader
+from util.dataloader import DataLoader, vec2text
 import torch
 from torch import optim, nn
 from tqdm import tqdm
 from util.bleu import get_bleu
+from matplotlib import pyplot
+
 
 conf = Config()
 data = DataLoader(source_lang=conf.source_lang,
@@ -29,11 +31,6 @@ def init_model(model):
         lambda m: torch.nn.init.kaiming_uniform_(m.weight)
         if hasattr(m, 'weight') and m.weight.dim() > 1 else None
     )
-
-
-def vec2text(vec, vocab):
-    return "".join(vocab.i2s[i] for i in vec.tolist()
-                   if vocab.i2s[i] not in [conf.pad, conf.eos, conf.sos])
 
 
 def train(model, train_data, optimizer, criterion):
@@ -161,3 +158,9 @@ if __name__ == '__main__':
     except:
         pickle.dump(train_loss_record, open("train_loss.pkl", "wb"))
         pickle.dump(evaluation_loss_record, open("val_loss.pkl", "wb"))
+
+
+    pyplot.plot(train_loss_record, label="train")
+    pyplot.plot(evaluation_loss_record, label="val")
+    pyplot.legend()
+    pyplot.show()
