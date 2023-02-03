@@ -1,0 +1,6 @@
+numpy
+jieba
+torch
+tqdm
+matplotlib
+nagisa
