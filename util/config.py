@@ -6,6 +6,7 @@ class Config:
     epochs: int
     source_lang: str
     target_lang: str
+    fp16: bool
     load_model: str
     save_interval: int
     save_path: str

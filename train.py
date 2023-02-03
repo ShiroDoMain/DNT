@@ -1,6 +1,5 @@
 import os.path
 import pickle
-from torch.cuda.amp import GradScaler, autocast
 from model.transformer import Transformer
 from util.config import Config
 from util.dataloader import DataLoader, vec2text
@@ -10,8 +9,6 @@ from tqdm import tqdm
 from util.bleu import get_bleu
 from matplotlib import pyplot
 
-
-scaler = GradScaler()
 
 conf = Config()
 data = DataLoader(source_lang=conf.source_lang,
@@ -26,6 +23,10 @@ data = DataLoader(source_lang=conf.source_lang,
                   eos=conf.eos)
 print("load dataset")
 
+if conf.fp16:
+    from torch.cuda.amp import GradScaler, autocast
+    scaler = GradScaler()
+
 
 def init_model(model):
     print("model initialize")
@@ -33,6 +34,15 @@ def init_model(model):
         lambda m: torch.nn.init.kaiming_uniform_(m.weight)
         if hasattr(m, 'weight') and m.weight.dim() > 1 else None
     )
+
+
+def _train_batch(model, criterion, x, y):
+    output = model(x, y[:, :-1])
+    output = output.contiguous().view(-1, output.size(-1))
+
+    target = y[:, 1:].contiguous().view(-1)
+    loss_ = criterion(output, target)
+    return output, loss_
 
 
 def train(model, train_data, optimizer, criterion):
@@ -44,17 +54,21 @@ def train(model, train_data, optimizer, criterion):
         target = batch.target
 
         optimizer.zero_grad()
-        with autocast():
-            output = model(source, target[:, :-1])
-            output_ = output.contiguous().view(-1, output.size(-1))
-            target = target[:, 1:].contiguous().view(-1)
+        if conf.fp16:
+            with autocast():
+                output, loss_ = _train_batch(model, criterion, source, target)
+            scaler.scale(loss_).backward()
 
-            loss_ = criterion(output_, target)
-        scaler.scale(loss_).backward()
+            nn.utils.clip_grad_norm_(model.parameters(), conf.clip)
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            output, loss_ = _train_batch(model, criterion, source, target)
 
-        nn.utils.clip_grad_norm_(model.parameters(), conf.clip)
-        scaler.step(optimizer)
-        scaler.update()
+            loss_.backward()
+
+            nn.utils.clip_grad_norm_(model.parameters(), conf.clip)
+            optimizer.step()
 
         loss += loss_.item()
         progress.set_postfix_str(f"step: {step}, loss: {loss_.item():.5f}")
@@ -73,11 +87,8 @@ def evaluate(model, val_data, criterion):
             source = batch.source
             target = batch.target
 
-            output = model(source, target[:, :-1])
-            output_ = output.contiguous().view(-1, output.size(-1))
-            target = target[:, 1:].contiguous().view(-1)
+            output, loss_ = _train_batch(model, criterion, source, target)
 
-            loss_ = criterion(output_, target)
             loss += loss_.item()
 
             total_bleu = []
