@@ -1,6 +1,6 @@
 import os.path
 import pickle
-
+from torch.cuda.amp import GradScaler, autocast
 from model.transformer import Transformer
 from util.config import Config
 from util.dataloader import DataLoader, vec2text
@@ -10,6 +10,8 @@ from tqdm import tqdm
 from util.bleu import get_bleu
 from matplotlib import pyplot
 
+
+scaler = GradScaler()
 
 conf = Config()
 data = DataLoader(source_lang=conf.source_lang,
@@ -42,15 +44,17 @@ def train(model, train_data, optimizer, criterion):
         target = batch.target
 
         optimizer.zero_grad()
-        output = model(source, target[:, :-1])
-        output_ = output.contiguous().view(-1, output.size(-1))
-        target = target[:, 1:].contiguous().view(-1)
+        with autocast():
+            output = model(source, target[:, :-1])
+            output_ = output.contiguous().view(-1, output.size(-1))
+            target = target[:, 1:].contiguous().view(-1)
 
-        loss_ = criterion(output_, target)
-        loss_.backward()
+            loss_ = criterion(output_, target)
+        scaler.scale(loss_).backward()
 
         nn.utils.clip_grad_norm_(model.parameters(), conf.clip)
-        optimizer.step()
+        scaler.step(optimizer)
+        scaler.update()
 
         loss += loss_.item()
         progress.set_postfix_str(f"step: {step}, loss: {loss_.item():.5f}")
