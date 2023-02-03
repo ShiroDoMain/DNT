@@ -98,6 +98,7 @@ def main():
     train_data, test_data, val_data = data.make_data()
 
     print("build model")
+    print(f"use device {conf.device}")
     model = Transformer(
         dim_model=conf.dim_model,
         max_seq_len=conf.max_seq_len,
@@ -117,7 +118,7 @@ def main():
     else:
         init_model(model)
 
-    print(f'The model has {sum(p.numel() for p in model.parameters() if p.requires_grad):,} trainable parameters')
+    print(f"The model has {sum(p.numel() for p in model.parameters() if p.requires_grad):,} trainable parameters")
 
     optimizer = optim.Adam(model.parameters(),
                            lr=conf.init_lr,
@@ -156,11 +157,12 @@ if __name__ == '__main__':
     try:
         main()
     except:
-        pickle.dump(train_loss_record, open("train_loss.pkl", "wb"))
-        pickle.dump(evaluation_loss_record, open("val_loss.pkl", "wb"))
-
-
-    pyplot.plot(train_loss_record, label="train")
-    pyplot.plot(evaluation_loss_record, label="val")
-    pyplot.legend()
-    pyplot.show()
+        raise
+    #     pickle.dump(train_loss_record, open("train_loss.pkl", "wb"))
+    #     pickle.dump(evaluation_loss_record, open("val_loss.pkl", "wb"))
+    #
+    #
+    # pyplot.plot(train_loss_record, label="train")
+    # pyplot.plot(evaluation_loss_record, label="val")
+    # pyplot.legend()
+    # pyplot.show()
