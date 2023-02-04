@@ -1,7 +1,9 @@
-from model.encoder import Encoder
-from model.decoder import Decoder
-import torch.nn as nn
 import torch
+import torch.nn as nn
+from torch.autograd import Variable
+
+from model.decoder import Decoder
+from model.encoder import Encoder
 
 
 class Transformer(nn.Module):
@@ -17,6 +19,7 @@ class Transformer(nn.Module):
                  drop,
                  device):
         super().__init__()
+        self.dim_model = dim_model
         self.pad_idx = pad_idx
         self.device = device
         self.encoder = Encoder(
@@ -43,22 +46,19 @@ class Transformer(nn.Module):
         )
 
     def forward(self, source, target):
-        source_mask = self.pad_mask(source, source)
-        source_target_mask = self.pad_mask(target, source)
+        source_mask = (source != self.pad_idx).unsqueeze(-2)
 
-        target_mask = self.pad_mask(target, target) * self.no_peat_mask(target, target)
+        target_mask = self.make_std_mask(target)
         encoder_source = self.encoder(source, source_mask)
-        output = self.decoder(target, encoder_source, target_mask, source_target_mask)
+        output = self.decoder(target, encoder_source, target_mask, source_mask)
         return output
 
-    def pad_mask(self, q, k):
-        q_len, k_len = q.size(1), k.size(1)
+    def make_std_mask(self, tgt):
+        """Create a mask to hide padding and future words."""
+        tgt_mask = (tgt != self.pad_idx).unsqueeze(-2)
+        tgt_mask = tgt_mask & Variable(
+            self.subsequent_mask(tgt.size(-1))).to(self.device)
+        return tgt_mask
 
-        k = k.ne(self.pad_idx).unsqueeze(1).unsqueeze(2).repeat(1, 1, q_len, 1)
-        q = q.ne(self.pad_idx).unsqueeze(1).unsqueeze(3).repeat(1, 1, 1, k_len)
-
-        return k & q
-
-    def no_peat_mask(self, q, k):
-        q_len, k_len = q.size(1), k.size(1)
-        return torch.tril(torch.ones(q_len, k_len)).type(torch.BoolTensor).to(self.device)
+    def subsequent_mask(self, size):
+        return torch.ones((1, size, size)).triu(1) == 0

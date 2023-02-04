@@ -36,12 +36,11 @@ def init_model(model):
     )
 
 
-def _train_batch(model, criterion, x, y):
-    output = model(x, y[:, :-1])
+def _train_batch(model, criterion, source, target):
+    output = model(source, target[:, :-1])
     _output = output.contiguous().view(-1, output.size(-1))
 
-    target = y[:, 1:].contiguous().view(-1)
-    loss_ = criterion(_output, target)
+    loss_ = criterion(_output, target[:, 1:].contiguous().view(-1))
     return output, loss_
 
 
@@ -172,7 +171,7 @@ if __name__ == '__main__':
     try:
         main()
     except:
-        # raise
+        raise
         pickle.dump(train_loss_record, open("train_loss.pkl", "wb"))
         pickle.dump(evaluation_loss_record, open("val_loss.pkl", "wb"))
 

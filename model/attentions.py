@@ -33,6 +33,8 @@ class MultiHeadAttention(nn.Module):
         q, k, v = [linear(x).view(bs, -1, self.head, self.d_k).transpose(1, 2) for linear, x in
                    zip(self.linear_layers, (q, k, v))]
 
+        if mask is not None:
+            mask = mask.unsqueeze(1)
         x, attn = self.attention(q, k, v, mask, self.drop)
 
         x = x.transpose(1, 2).contiguous().view(bs, -1, self.head * self.d_k)
