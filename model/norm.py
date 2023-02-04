@@ -10,7 +10,7 @@ class Norm(nn.Module):
         self.beta = Parameter(torch.zeros(dim_model))
         self.eps = eps
 
-    def forward(self,x):
+    def forward(self, x):
         mean = x.mean(-1, keepdim=True)
         std = x.std(-1, keepdim=True)
         return self.gamma * (x - mean) / (std + self.eps) + self.beta

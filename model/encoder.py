@@ -3,6 +3,7 @@ from model.feed_forward import PositionwiseFeedForward
 from model.embedding import Embedding
 from model.attentions import MultiHeadAttention
 from model.norm import Norm
+from model.connection import LayerConnection
 import torch.nn as nn
 
 
@@ -12,17 +13,13 @@ class EncoderLayer(nn.Module):
         self.attention = MultiHeadAttention(head=n_head, dim_model=dim_model, drop=drop)
         self.feed_forward = PositionwiseFeedForward(dim_model=dim_model, hidden=feed_hidden, drop=drop)
         self.norm = Norm(dim_model=dim_model)
-        self.dropout = nn.Dropout(drop)
+        self.connection = nn.ModuleList(LayerConnection(dim_model, drop) for _ in range(2))
 
     def forward(self, x, mask):
-        x_ = x
-        x = self.attention(x, x, x, mask)
-        self.norm(self.dropout(x) + x_)
+        x = self.connection[0](x, lambda _x: self.attention(_x, _x, _x, mask))
 
         # position feed forward
-        x_ = x
-        x = self.feed_forward(x)
-        x = self.norm(self.dropout(x) + x_)
+        x = self.connection[1](x, self.feed_forward)
         return x
 
 

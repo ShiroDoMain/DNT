@@ -30,7 +30,7 @@ model = Transformer(
         drop=conf.drop,
         device=conf.device
     ).to(conf.device)
-model.load_state_dict(torch.load("save/best.pt"))
+model.load_state_dict(torch.load("save/DNT_zh2ja_20.pt"))
 model.eval()
 
 batch_bleu = []

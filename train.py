@@ -9,7 +9,6 @@ from tqdm import tqdm
 from util.bleu import get_bleu
 from matplotlib import pyplot
 
-
 conf = Config()
 data = DataLoader(source_lang=conf.source_lang,
                   target_lang=conf.target_lang,
@@ -25,6 +24,7 @@ print("load dataset")
 
 if conf.fp16:
     from torch.cuda.amp import GradScaler, autocast
+
     scaler = GradScaler()
 
 
@@ -38,10 +38,10 @@ def init_model(model):
 
 def _train_batch(model, criterion, x, y):
     output = model(x, y[:, :-1])
-    output = output.contiguous().view(-1, output.size(-1))
+    _output = output.contiguous().view(-1, output.size(-1))
 
     target = y[:, 1:].contiguous().view(-1)
-    loss_ = criterion(output, target)
+    loss_ = criterion(_output, target)
     return output, loss_
 
 
@@ -160,7 +160,7 @@ def main():
             torch.save(model.state_dict(), os.path.join(conf.save_path, model_name + "_best.pt"))
         print(f"Epoch:{epoch} | train loss: {train_loss:.5f} | evaluation loss: {val_loss:.5f} | bleu: {bleu:.5f}")
 
-        if epoch % conf.save_interval == 0 and epoch:
+        if (epoch+1) % conf.save_interval == 0 and epoch:
             torch.save(model.state_dict(), os.path.join(conf.save_path, model_name + f"_{epoch}.pt"))
         train_loss_record.append(train_loss)
         evaluation_loss_record.append(val_loss)
@@ -172,12 +172,11 @@ if __name__ == '__main__':
     try:
         main()
     except:
-        raise
-    #     pickle.dump(train_loss_record, open("train_loss.pkl", "wb"))
-    #     pickle.dump(evaluation_loss_record, open("val_loss.pkl", "wb"))
-    #
-    #
-    # pyplot.plot(train_loss_record, label="train")
-    # pyplot.plot(evaluation_loss_record, label="val")
-    # pyplot.legend()
-    # pyplot.show()
+        # raise
+        pickle.dump(train_loss_record, open("train_loss.pkl", "wb"))
+        pickle.dump(evaluation_loss_record, open("val_loss.pkl", "wb"))
+
+    pyplot.plot(train_loss_record, label="train")
+    pyplot.plot(evaluation_loss_record, label="val")
+    pyplot.legend()
+    pyplot.show()

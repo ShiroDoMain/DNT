@@ -4,6 +4,7 @@ from model.embedding import Embedding
 from model.attentions import MultiHeadAttention
 from model.norm import Norm
 from model.feed_forward import PositionwiseFeedForward
+from model.connection import LayerConnection
 
 
 class DecoderLayer(nn.Module):
@@ -14,23 +15,38 @@ class DecoderLayer(nn.Module):
         self.encoder_decoder_attention = MultiHeadAttention(dim_model=dim_model, head=n_head, drop=drop)
 
         self.feed_forward = PositionwiseFeedForward(dim_model=dim_model, hidden=feed_hidden, drop=drop)
-        self.norm = Norm(dim_model=dim_model)
-        self.dropout = nn.Dropout(drop)
+        self.connection = nn.ModuleList(LayerConnection(dim_model, drop) for _ in range(3))
 
     def forward(self, target, encode_source, target_mask, source_mask):
-        target_ = target
-        target = self.self_attention(target, target, target, mask=target_mask)
-        target = self.norm(self.dropout(target) + target_)
+        # x, mem, sm, tm
+        _copy = encode_source
 
-        if encode_source is not None:
-            target_ = target
-            target = self.encoder_decoder_attention(target, encode_source, encode_source, source_mask)
+        # First connection layer
+        # attn(target,target,target,target_mask)
+        target = self.connection[0](target, lambda _x: self.self_attention(_x, _x, _x, target_mask))
 
-            target = self.norm(self.dropout(target) + target_)
+        # Second connection layer No.1
+        # attn(target,encode_source,encode_source,source_mask)
+        target = self.connection[1](target, lambda _x: self.self_attention(_x, _copy, _copy, source_mask))
 
-        target_ = target
-        target = self.feed_forward(target)
-        return self.norm(self.dropout(target) + target_)
+        # last layer
+        # feed forward
+        target = self.connection[2](target, self.feed_forward)
+
+        return target
+        # target_ = target
+        # target = self.self_attention(target, target, target, mask=target_mask)
+        # target = self.norm(self.dropout(target) + target_)
+        #
+        # if encode_source is not None:
+        #     target_ = target
+        #     target = self.encoder_decoder_attention(target, encode_source, encode_source, source_mask)
+        #
+        #     target = self.norm(self.dropout(target) + target_)
+        #
+        # target_ = target
+        # target = self.feed_forward(target)
+        # return self.norm(self.dropout(target) + target_)
 
 
 class Decoder(nn.Module):
