@@ -5,10 +5,10 @@ from tqdm import tqdm
 
 
 args = ArgumentParser()
-args.add_argument("-d", "--dataset", type=str, help="dataset path")
+args.add_argument("-d", "--dataset", type=str, required=True, help="dataset path")
 args.add_argument("-s", "--save", type=str, default=None, help="save path")
 args.add_argument("-m", "--min_freq", type=int, default=2, help="filter the least frequent words")
-args.add_argument("-l", "--lang", type=str, default="en", help="language type: en,zh,tw,ja,de...")
+args.add_argument("-l", "--lang", type=str, required=True, help="language type: en,zh,tw,ja,de...")
 args.add_argument("--train_path", type=str, default=None, help="train data save path")
 args.add_argument("--test_path", type=str, default=None, help="test data save path")
 args.add_argument("--val_path", type=str, default=None, help="val data save path")
@@ -39,7 +39,7 @@ def dataset_split(file_path, train_path, test_path, val_path, lang, test_len, va
             open(test_path or "/".join(file_path.split("/")[:-1]) + f"/test.{lang}", "w", encoding="utf-8") as test, \
             open(val_path or "/".join(file_path.split("/")[:-1]) + f"/val.{lang}", "w", encoding="utf-8") as val:
         data_length = len(lines)
-        progress = tqdm(enumerate(lines), desc=f"process {lang}")
+        progress = tqdm(enumerate(lines), desc=f"process {lang}", total=data_length)
         for offset, line in progress:
             if data_length - offset > test_len + val_len:
                 train.write(text_filter(line.lower()))

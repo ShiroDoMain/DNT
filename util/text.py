@@ -3,6 +3,7 @@ import nagisa
 from typing import List, Dict
 from collections import Counter
 import re
+from tqdm import tqdm
 
 
 symbol_half = r"""!"#$%&()*+,./:;<=>?@[\]^_`{|}~"""
@@ -27,7 +28,7 @@ def chinese_text(line):
 def make_vocab(line_list: List[str], min_freq, lang) -> Dict[str, int]:
     word_list = []
     process_func = text_func.get(lang)
-    for line in line_list:
+    for line in tqdm(line_list, desc="create vocabulary"):
         line = re.sub(rf"[{symbols}]", "", line)
         if process_func is not None:
             line = process_func(line)

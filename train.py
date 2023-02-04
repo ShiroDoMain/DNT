@@ -160,7 +160,7 @@ def main():
         print(f"Epoch:{epoch} | train loss: {train_loss:.5f} | evaluation loss: {val_loss:.5f} | bleu: {bleu:.5f}")
 
         if (epoch+1) % conf.save_interval == 0 and epoch:
-            torch.save(model.state_dict(), os.path.join(conf.save_path, model_name + f"_{epoch}.pt"))
+            torch.save(model.state_dict(), os.path.join(conf.save_path, model_name + f"_{epoch+1}.pt"))
         train_loss_record.append(train_loss)
         evaluation_loss_record.append(val_loss)
     torch.save(model.state_dict(), os.path.join(conf.save_path, model_name + f"_latest.pt"))
