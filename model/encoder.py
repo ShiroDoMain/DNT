@@ -12,7 +12,6 @@ class EncoderLayer(nn.Module):
         super().__init__()
         self.attention = MultiHeadAttention(head=n_head, dim_model=dim_model, drop=drop)
         self.feed_forward = PositionwiseFeedForward(dim_model=dim_model, hidden=feed_hidden, drop=drop)
-        self.norm = Norm(dim_model=dim_model)
         self.connection = nn.ModuleList(LayerConnection(dim_model, drop) for _ in range(2))
 
     def forward(self, x, mask):
