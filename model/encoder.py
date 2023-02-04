@@ -39,7 +39,6 @@ class Encoder(nn.Module):
                                    max_seq_len=max_seq_len,
                                    dim_model=dim_model,
                                    drop=drop,
-                                   device=device,
                                    pad_idx=pad_idx)
         self.layers = nn.ModuleList([EncoderLayer(dim_model=dim_model,
                                                   n_head=n_head,

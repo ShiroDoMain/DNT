@@ -56,8 +56,7 @@ class Decoder(nn.Module):
                                    dim_model=dim_model,
                                    max_seq_len=max_seq_len,
                                    pad_idx=pad_idx,
-                                   drop=drop,
-                                   device=device)
+                                   drop=drop)
         self.layers = nn.ModuleList(DecoderLayer(dim_model, n_head, feed_hidden, drop) for _ in range(n_layers))
 
         self.linear = nn.Linear(dim_model, decode_vocab_size)

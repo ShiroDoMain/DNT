@@ -6,6 +6,17 @@ from model.decoder import Decoder
 from model.encoder import Encoder
 
 
+def get_pad_mask(seq, pad_idx):
+    return (seq != pad_idx).unsqueeze(-2)
+
+
+def get_subsequent_mask(seq):
+    """ For masking out the subsequent info. """
+    sz_b, len_s = seq.size()
+    subsequent_mask = (1 - torch.triu(
+        torch.ones((1, len_s, len_s), device=seq.device), diagonal=1)).bool()
+    return subsequent_mask
+
 class Transformer(nn.Module):
     def __init__(self,
                  dim_model,
@@ -46,19 +57,9 @@ class Transformer(nn.Module):
         )
 
     def forward(self, source, target):
-        source_mask = (source != self.pad_idx).unsqueeze(-2)
-
-        target_mask = self.make_std_mask(target)
-        encoder_source = self.encoder(source, source_mask)
-        output = self.decoder(target, encoder_source, target_mask, source_mask)
+        source_mask = get_pad_mask(source, self.pad_idx)
+        target_mask = get_pad_mask(target, self.pad_idx) & get_subsequent_mask(target)
+        encoder_output = self.encoder(source, source_mask)
+        output = self.decoder(target, encoder_output, target_mask, source_mask)
         return output
 
-    def make_std_mask(self, tgt):
-        """Create a mask to hide padding and future words."""
-        tgt_mask = (tgt != self.pad_idx).unsqueeze(-2)
-        tgt_mask = tgt_mask & Variable(
-            self.subsequent_mask(tgt.size(-1))).to(self.device)
-        return tgt_mask
-
-    def subsequent_mask(self, size):
-        return torch.ones((1, size, size)).triu(1) == 0
