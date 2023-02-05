@@ -133,4 +133,4 @@ data/*
 *.pt
 *.pkl
 conf/*
-train_*
+*_raw.*

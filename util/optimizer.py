@@ -28,8 +28,8 @@ class NoamOpt:
         if step is None:
             step = self._step
         return self.factor * \
-               (self.model_size ** (-0.5) *
-                min(step ** (-0.5), step * self.warmup ** (-1.5)))
+            (self.model_size ** (-0.5) *
+             min(step ** (-0.5), step * self.warmup ** (-1.5)))
 
 
 def get_std_opt(model):
@@ -42,7 +42,7 @@ class LabelSmoothing(nn.Module):
 
     def __init__(self, size, padding_idx, smoothing=0.0):
         super().__init__()
-        self.criterion = nn.KLDivLoss(size_average=False)
+        self.criterion = nn.KLDivLoss(reduction="sum")
         self.padding_idx = padding_idx
         self.confidence = 1.0 - smoothing
         self.smoothing = smoothing
