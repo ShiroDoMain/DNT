@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch.nn.functional as F
 import torch
 import math
 
@@ -9,14 +10,13 @@ class GELU(nn.Module):
 
 
 class PositionwiseFeedForward(nn.Module):
-
-    def __init__(self, dim_model, hidden, drop):
+    "Implements FFN equation."
+    def __init__(self, d_model, d_ff, dropout=0.1):
         super().__init__()
-        self.linear1 = nn.Linear(dim_model, hidden)
-        self.linear2 = nn.Linear(hidden, dim_model)
-        self.gelu = GELU()
-        self.dropout = nn.Dropout(drop)
+        self.w_1 = nn.Linear(d_model, d_ff)
+        self.w_2 = nn.Linear(d_ff, d_model)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        return self.linear2(self.dropout(self.gelu(self.linear1(x))))
+        return self.w_2(self.dropout(F.relu(self.w_1(x))))
 

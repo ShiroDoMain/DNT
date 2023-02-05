@@ -1,70 +1,35 @@
-import torch
 import torch.nn as nn
-from model.embedding import Embedding
-from model.attentions import MultiHeadAttention
-from model.norm import Norm
-from model.feed_forward import PositionwiseFeedForward
-from model.connection import LayerConnection
+
+from model import clones
+from model.connection import SublayerConnection
+from model.norm import LayerNorm
 
 
 class DecoderLayer(nn.Module):
-    def __init__(self, dim_model, n_head, feed_hidden, drop):
-        super().__init__()
-        self.self_attention = MultiHeadAttention(head=n_head, dim_model=dim_model, drop=drop)
+    "Decoder is made of self-attn, src-attn, and feed forward (defined below)"
 
-        self.source_attention = MultiHeadAttention(dim_model=dim_model, head=n_head, drop=drop)
+    def __init__(self, size, self_attn, src_attn, feed_forward, dropout):
+        super(DecoderLayer, self).__init__()
+        self.size = size
+        self.self_attn = self_attn
+        self.src_attn = src_attn
+        self.feed_forward = feed_forward
+        self.sublayer = clones(SublayerConnection(size, dropout), 3)
 
-        self.feed_forward = PositionwiseFeedForward(dim_model=dim_model, hidden=feed_hidden, drop=drop)
-        self.connection = nn.ModuleList(LayerConnection(dim_model, drop) for _ in range(3))
-
-    def forward(self, target, encode_source, target_mask, source_mask):
-        # x, mem, sm, tm
-        _copy = encode_source
-
-        # First connection layer
-        # attn(target,target,target,target_mask)
-        target = self.connection[0](target, lambda _x: self.self_attention(_x, _x, _x, target_mask))
-
-        # Second connection layer No.1
-        # attn(target,encode_source,encode_source,source_mask)
-        target = self.connection[1](target, lambda _x: self.source_attention(_x, _copy, _copy, source_mask))
-
-        # last layer
-        # feed forward
-        target = self.connection[2](target, self.feed_forward)
-
-        return target
-        # target_ = target
-        # target = self.self_attention(target, target, target, mask=target_mask)
-        # target = self.norm(self.dropout(target) + target_)
-        #
-        # if encode_source is not None:
-        #     target_ = target
-        #     target = self.encoder_decoder_attention(target, encode_source, encode_source, source_mask)
-        #
-        #     target = self.norm(self.dropout(target) + target_)
-        #
-        # target_ = target
-        # target = self.feed_forward(target)
-        # return self.norm(self.dropout(target) + target_)
+    def forward(self, x, memory, src_mask, tgt_mask):
+        m = memory
+        x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, tgt_mask))
+        x = self.sublayer[1](x, lambda x: self.src_attn(x, m, m, src_mask))
+        return self.sublayer[2](x, self.feed_forward)
 
 
 class Decoder(nn.Module):
-    def __init__(self, decode_vocab_size, max_seq_len, dim_model, feed_hidden, pad_idx, n_layers, n_head, drop, device):
-        super().__init__()
-        self.embedding = Embedding(voc_size=decode_vocab_size,
-                                   dim_model=dim_model,
-                                   max_seq_len=max_seq_len,
-                                   pad_idx=pad_idx,
-                                   drop=drop)
-        self.layers = nn.ModuleList(DecoderLayer(dim_model, n_head, feed_hidden, drop) for _ in range(n_layers))
+    def __init__(self, layer, N):
+        super(Decoder, self).__init__()
+        self.layers = clones(layer, N)
+        self.norm = LayerNorm(layer.size)
 
-        self.linear = nn.Linear(dim_model, decode_vocab_size)
-
-    def forward(self, target, encode_source, target_mask, source_mask):
-        target = self.embedding(target)
-
+    def forward(self, x, memory, src_mask, tgt_mask):
         for layer in self.layers:
-            target = layer(target, encode_source, target_mask, source_mask)
-
-        return self.linear(target)
+            x = layer(x, memory, src_mask, tgt_mask)
+        return self.norm(x)

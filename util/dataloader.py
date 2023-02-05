@@ -1,4 +1,6 @@
 import os
+from typing import Optional
+
 import torch
 from tqdm import tqdm
 from util.text import symbols
@@ -189,8 +191,8 @@ class DataLoader:
         self.pad = pad
         self.eos = eos
 
-        self.source_vocab = None
-        self.target_vocab = None
+        self.source_vocab: Optional[Vocab] = None
+        self.target_vocab: Optional[Vocab] = None
 
     def _pad(self, data, max_len):
         return [pad(text, max_len) for text in data]
