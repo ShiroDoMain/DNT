@@ -12,7 +12,7 @@ class DecoderLayer(nn.Module):
         super().__init__()
         self.self_attention = MultiHeadAttention(head=n_head, dim_model=dim_model, drop=drop)
 
-        self.encoder_decoder_attention = MultiHeadAttention(dim_model=dim_model, head=n_head, drop=drop)
+        self.source_attention = MultiHeadAttention(dim_model=dim_model, head=n_head, drop=drop)
 
         self.feed_forward = PositionwiseFeedForward(dim_model=dim_model, hidden=feed_hidden, drop=drop)
         self.connection = nn.ModuleList(LayerConnection(dim_model, drop) for _ in range(3))
@@ -27,7 +27,7 @@ class DecoderLayer(nn.Module):
 
         # Second connection layer No.1
         # attn(target,encode_source,encode_source,source_mask)
-        target = self.connection[1](target, lambda _x: self.self_attention(_x, _copy, _copy, source_mask))
+        target = self.connection[1](target, lambda _x: self.source_attention(_x, _copy, _copy, source_mask))
 
         # last layer
         # feed forward

@@ -17,6 +17,7 @@ def get_subsequent_mask(seq):
         torch.ones((1, len_s, len_s), device=seq.device), diagonal=1)).bool()
     return subsequent_mask
 
+
 class Transformer(nn.Module):
     def __init__(self,
                  dim_model,
@@ -62,4 +63,3 @@ class Transformer(nn.Module):
         encoder_output = self.encoder(source, source_mask)
         output = self.decoder(target, encoder_output, target_mask, source_mask)
         return output
-
