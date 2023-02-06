@@ -14,6 +14,10 @@ class NoamOpt:
         self.model_size = model_size
         self._rate = 0
 
+    @property
+    def lr(self):
+        return self._rate
+
     def step(self):
         """Update parameters and rate"""
         self._step += 1

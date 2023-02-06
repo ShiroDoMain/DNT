@@ -20,15 +20,19 @@ data = DataLoader(source_lang=conf.source_lang,
                   eos=conf.eos)
 
 
-def predict(text, model):
-    src = jieba.lcut(text)
-    src = torch.tensor([[data.source_vocab.s2i[s] for s in src]], dtype=torch.long, device=conf.device)
-    src = src.transpose(0, 1)[:1]
+def text2vec(text, pad_len=20):
+    vec = ["[SOS]"] + jieba.lcut(text) + ["[EOS]"]
+    vec += ["[PAD]"] * (pad_len - len(vec))
+    vec = torch.tensor([[data.source_vocab.s2i[s] for s in vec]], dtype=torch.long, device=conf.device)
+    return vec
+
+
+def predict(src, model):  # src = src.transpose(0, 1)[:1]
     src_mask = (src != data.source_vocab.s2i[conf.pad]).unsqueeze(-2)
-    out = greedy_decode(model, src, src_mask, conf.max_seq_len,
-                        data.target_vocab.s2i[conf.sos],
-                        data.target_vocab.s2i[conf.eos])
-    output = vec2text(out[0], data.target_vocab)
+    output = greedy_decode(model, src, src_mask, conf.max_seq_len,
+                           data.target_vocab.s2i[conf.sos],
+                           data.target_vocab.s2i[conf.eos])
+    # output =
     return output
 
 
@@ -45,10 +49,26 @@ if __name__ == '__main__':
                                    conf.feed_hidden,
                                    conf.n_head,
                                    conf.drop)
-    model.load_state_dict(torch.load("save/DNT_20.pt"))
+    model.load_state_dict(torch.load("save/DNT_110.pt"))
     model.to(conf.device)
     model.eval()
     with torch.no_grad():
-        while 1:
-            res = predict(input("input:"), model)
-            print("translation:", res)
+        # src = text2vec("这是一段测试文本")
+        # print(src.size())
+        # print("source:", vec2text(src[0], data.source_vocab))
+        # res = predict(src, model)
+        # print(res)
+        # print("predict:", vec2text(res[0], data.target_vocab))
+        # while 1:
+        #     text = input("input:")  # "这是一段测试文本"  # input("input:")
+        #     res = predict(text, model)
+        #     print("translation:", res)
+        for batch in test_iter:
+            for i in range(conf.batch_size):
+                src = batch.source[i, :].repeat(1, 1)
+                print("source:", vec2text(src[0], data.source_vocab))
+                print("target:", vec2text(batch.target[i, :], data.target_vocab))
+                res = predict(src, model)
+                print("predict:", vec2text(res[0], data.target_vocab))
+                print()
+            break
