@@ -44,10 +44,11 @@ class DefaultDict(dict):
 
 class Vocab:
     def __init__(self,
-                 file):
+                 file,
+                 vocab_size):
         self.vocab = {idx: word.strip() for idx, word in enumerate(open(file, encoding="utf-8").readlines())}
         self.vocab_reverse = DefaultDict({word: idx for idx, word in self.vocab.items()})
-        self.length = len(self.vocab)
+        self.length = len(self.vocab) if vocab_size is None else vocab_size
 
     @property
     def i2s(self):
@@ -161,6 +162,7 @@ class DataLoader:
                  data_path,
                  batch_size,
                  device,
+                 vocab_size=None,
                  save_normal=False,
                  padding=False,
                  sos="[SOS]",
@@ -186,6 +188,9 @@ class DataLoader:
         self.source_vocab_path = os.path.join(data_path, f"vocab.{source_lang}")
         self.target_vocab_path = os.path.join(data_path, f"vocab.{target_lang}")
 
+        self.source_vocab_size = vocab_size
+        self.target_vocab_size = vocab_size
+
         self.padding = padding
         self.sos = sos
         self.pad = pad
@@ -198,10 +203,12 @@ class DataLoader:
         return [pad(text, max_len) for text in data]
 
     def load_vocab(self):
-        source_vocab = Vocab(self.source_vocab_path)
-        target_vocab = Vocab(self.target_vocab_path)
+        source_vocab = Vocab(self.source_vocab_path, self.source_vocab_size)
+        target_vocab = Vocab(self.target_vocab_path, self.target_vocab_size)
         self.source_vocab = source_vocab
         self.target_vocab = target_vocab
+        self.source_vocab_size = source_vocab.length
+        self.target_vocab_size = target_vocab.length
         return source_vocab, target_vocab
 
     def _make_data(self, src_path, trg_path, src_vocab, trg_vocab):

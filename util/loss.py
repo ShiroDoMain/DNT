@@ -6,13 +6,16 @@ class SimpleLossCompute:
         self.criterion = criterion
         self.opt = opt
 
-    def __call__(self, x, y, norm):
+    def __call__(self, x, y, norm, fp16=False, scaler=None):
         x = self.generator(x)
         loss = self.criterion(x.contiguous().view(-1, x.size(-1)),
                               y.contiguous().view(-1)) / norm
         # loss.backward()
         if self.opt is not None:
-            loss.backward()
+            if fp16 and scaler is not None:
+                scaler.scale(loss).backward()
+            else:
+                loss.backward()
             self.opt.step()
             self.opt.optimizer.zero_grad()
         return loss.data * norm

@@ -3,6 +3,7 @@ import os.path
 
 
 class Config:
+    model_name: str
     epochs: int
     source_lang: str
     target_lang: str
@@ -33,6 +34,7 @@ class Config:
     eps: float
     pad: str
     sos: str
+    vocab_size: int
     eos: str
 
     def __init__(self):

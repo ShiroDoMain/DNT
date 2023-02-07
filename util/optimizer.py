@@ -18,14 +18,18 @@ class NoamOpt:
     def lr(self):
         return self._rate
 
-    def step(self):
+    def step(self, scaler=None):
         """Update parameters and rate"""
         self._step += 1
         rate = self.rate()
         for p in self.optimizer.param_groups:
             p['lr'] = rate
         self._rate = rate
-        self.optimizer.step()
+        if scaler is not None:
+            scaler.step(self.optimizer)
+            scaler.update()
+        else:
+            self.optimizer.step()
 
     def rate(self, step=None):
         """Implement `learn_rate` above"""

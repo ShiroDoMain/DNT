@@ -49,7 +49,7 @@ if __name__ == '__main__':
                                    conf.feed_hidden,
                                    conf.n_head,
                                    conf.drop)
-    model.load_state_dict(torch.load("save/DNT_110.pt"))
+    model.load_state_dict(torch.load("save/DNT_200.pt"))
     model.to(conf.device)
     model.eval()
     with torch.no_grad():
