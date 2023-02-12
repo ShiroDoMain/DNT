@@ -134,3 +134,4 @@ data/*
 *.pkl
 conf/*
 *_raw.*
+new_data/

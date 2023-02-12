@@ -20,7 +20,7 @@ data = DataLoader(source_lang=conf.source_lang,
                   pad=conf.pad,
                   sos=conf.sos,
                   eos=conf.eos,
-                  source_vocab_size=conf)
+                  vocab_size=conf)
 print("load dataset")
 
 if conf.fp16:

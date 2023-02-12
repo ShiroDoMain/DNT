@@ -49,7 +49,7 @@ if __name__ == '__main__':
                                    conf.feed_hidden,
                                    conf.n_head,
                                    conf.drop)
-    model.load_state_dict(torch.load("save/DNT_200.pt"))
+    model.load_state_dict(torch.load("save/DNT_zh2ja_40.pt"))
     model.to(conf.device)
     model.eval()
     with torch.no_grad():
@@ -71,4 +71,3 @@ if __name__ == '__main__':
                 res = predict(src, model)
                 print("predict:", vec2text(res[0], data.target_vocab))
                 print()
-            break

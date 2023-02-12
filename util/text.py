@@ -18,11 +18,11 @@ def segment_en(line: str):
 
 
 def japanese_text(line):
-    return " ".join(nagisa.tagging(line).words)
+    return " ".join(nagisa.wakati(line, lower=True))
 
 
 def chinese_text(line):
-    return " ".join(jieba.lcut(line))
+    return " ".join(jieba.lcut(line)).lower()
 
 
 def make_vocab(line_list: List[str], min_freq, lang) -> Dict[str, int]:
